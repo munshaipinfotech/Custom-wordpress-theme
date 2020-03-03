@@ -1,0 +1,63 @@
+=> Wordpress Page/Post Gallery
+
+
+A little background
+-------------------
+
+Wordpress has the ability to attach images to each page/post, and then display them using get_children function 
+with some parameters to target the images.
+
+I like to use those images as a simple slider or a static image the header, sometimes the footer, etc.
+
+The problem i faced was if you insert any image into the post/page content, that image then becomes an attachment
+ and therefore appears anywhere I use the get_children function.
+
+So I wrote an anonymous shortcode, that solves my very problem. I use regex to match a word such as slider in
+ the file name and only display those images. ie: slider_image0.jpg would show but image0.jpg would not.
+
+
+-----------------------------------------------------------------------------------
+the code
+add_shortcode( 'slider_gallery', function( $atts ) {
+
+    $defaults = array(
+        'show_only' => 'slider',
+        'img_class' => 'theImage',
+
+    );
+    extract( shortcode_atts( $defaults, $atts ) );
+
+    $post_id = get_the_ID(); //use post id so this shortcode can be used on any page!
+
+    $images =& get_children( 'post_parent='.$post_id.'&order=ASC&orderby=menu_order&post_type=attachment&post_mime_type=image' );
+
+    if ( empty( $images ) ) :
+    return false;
+    else :
+
+        foreach ( $images as $attachment_id => $attachment ):
+        $title = $attachment->post_title;
+    $imageData = wp_get_attachment_url( $attachment_id );
+    preg_match( '/(.*?)('.$show_only.'.+ ?)/i', $imageData, $matches ); //match all files with 'slider' etc: slider_one.jpg or oneslider.jpg
+    $media[] = @$matches[0];
+    $media = array_filter( $media );
+    endforeach;
+    foreach ( $media as $m ):
+    echo '<img class="'.$img_class.'" src="'.$m.'"/>';
+    endforeach;
+    endif;
+
+    return;
+
+} );
+--------------------------------------------------------------------------
+how to use
+this will use the default parameters slider and theImage for class
+
+[slider_gallery]
+or like this with the two parameters:
+
+[slider_gallery show_only="slider" img_class="theImage"]
+which you substitue what you want only show and which class ie: gallery_image0.jpg would be:
+
+[slider_gallery show_only="gallery"]
